@@ -8,6 +8,9 @@ export async function currentUser(options?: { [key: string]: any }) {
     data: API.CurrentUser;
   }>('/api/v1/currentUser', {
     method: 'GET',
+    headers: {
+      'token': localStorage.getItem('token')!,
+    },
     ...(options || {}),
   });
 }

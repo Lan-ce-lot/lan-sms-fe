@@ -3,6 +3,8 @@
 
 declare namespace API {
   type CurrentUser = {
+    id?: string;
+    username?: string;
     name?: string;
     avatar?: string;
     userid?: string;
@@ -24,6 +26,7 @@ declare namespace API {
   };
 
   type LoginResult = {
+    data?: any;
     code?: number;
     msg?: string;
     status?: string;

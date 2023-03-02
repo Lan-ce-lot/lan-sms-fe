@@ -1,5 +1,6 @@
 export default {
   'menu.welcome': '欢迎',
+  'menu.student': '学生表格',
   'menu.more-blocks': '更多区块',
   'menu.home': '首页',
   'menu.admin': '管理页',

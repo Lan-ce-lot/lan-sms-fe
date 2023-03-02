@@ -29,6 +29,13 @@ export default [
     component: './Welcome',
   },
   {
+    path: '/student',
+    name: 'student',
+    // icon of antd
+    icon: 'table',
+    component: './StudentTableList',
+  },
+  {
     path: '/admin',
     name: 'admin',
     icon: 'crown',
