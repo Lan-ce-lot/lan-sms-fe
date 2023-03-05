@@ -4,15 +4,34 @@ import { request } from '@umijs/max';
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
-  return request<{
-    data: API.CurrentUser;
-  }>('/api/v1/currentUser', {
+  const result = await request<API.result>('/api/v1/currentUser', {
     method: 'GET',
     headers: {
-      'token': localStorage.getItem('token')!,
+      token: localStorage.getItem('token')!,
     },
     ...(options || {}),
   });
+  return {
+    data: {
+      ...result.data,
+      name: result.data.username,
+      avatar: 'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
+      userid: '00000001',
+      email: 'antdesign@alipay.com',
+      signature: '海纳百川，有容乃大',
+      title: '交互专家',
+      group: '蚂蚁金服－某某某事业群－某某平台部－某某技术部－UED',
+    },
+  };
+  // return request<{
+  //   data: API.CurrentUser;
+  // }>('/api/v1/currentUser', {
+  //   method: 'GET',
+  //   headers: {
+  //     'token': localStorage.getItem('token')!,
+  //   },
+  //   ...(options || {}),
+  // });
 }
 
 /** 退出登录接口 POST /api/login/outLogin */

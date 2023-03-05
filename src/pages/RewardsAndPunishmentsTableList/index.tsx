@@ -1,7 +1,6 @@
 // import { addRule, removeRule, rule, updateRule } from '@/services/ant-design-pro/api';
 import {
   addStudent,
-  getAllStudent,
   removeStudent,
   student,
   updateStudent,
@@ -20,7 +19,6 @@ import {
 import { FormattedMessage, useIntl } from '@umijs/max';
 import { Button, Drawer, message, Modal } from 'antd';
 import React, { useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
 
@@ -69,57 +67,17 @@ const handleUpdate = async (fields: FormValueType) => {
 };
 
 /**
- * @en-US downloadExcel
- * @zh-CN 更新节点
+ *  Delete node
+ * @zh-CN 删除节点
  *
- * @param data
+ * @param selectedRows
  */
-const downloadExcel = (data: any) => {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-  XLSX.writeFile(workbook, 'DataSheet.xlsx');
-};
-/**
- * export excel
- *
- */
-const handleExport = async () => {
-  const hide = message.loading('正在导出');
-  try {
-    const students = await getAllStudent();
-    downloadExcel(students.data);
-    hide();
-    message.success('导出成功');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('Adding failed, please try again!');
-    return false;
-  }
-};
 const handleRemove = async (selectedRows: API.StudentListItem[]) => {
   const hide = message.loading('正在删除');
   if (!selectedRows) return true;
   try {
     await removeStudent({
       key: selectedRows.map((row) => row.id),
-    });
-    hide();
-    message.success('Deleted successfully and will refresh soon');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('Delete failed, please try again');
-    return false;
-  }
-};
-
-const handleDeleteStudent = async (id: number) => {
-  const hide = message.loading('正在删除');
-  try {
-    await removeStudent({
-      id: id,
     });
     hide();
     message.success('Deleted successfully and will refresh soon');
@@ -158,34 +116,6 @@ const TableList: React.FC = () => {
   const columns: ProColumns<API.StudentListItem>[] = [
     {
       title:
-        // <FormattedMessage
-        //   id="pages.searchTable.updateForm.StudentName.nameLabel"
-        //   defaultMessage="Student name"
-        // />
-        '系部',
-      dataIndex: 'department',
-
-      tip: 'The Student name is the unique key',
-      render: (dom, entity) => {
-        return (
-          <a
-            onClick={() => {
-              setCurrentRow(entity);
-              setShowDetail(true);
-            }}
-          >
-            {dom}
-          </a>
-        );
-      },
-    },
-    {
-      title: '班级',
-      dataIndex: 'class',
-      valueType: 'textarea',
-    },
-    {
-      title:
         '学号',
         // <FormattedMessage
         //   id="pages.searchTable.titleCallNo"
@@ -207,111 +137,24 @@ const TableList: React.FC = () => {
       hideInForm: true,
     },
     {
-      title: '性别',
-      dataIndex: 'gender',
-      valueType: 'textarea',
-    },
-    {
-      title: '民族',
-      dataIndex: 'nation',
-      valueType: 'textarea',
-    },
-    {
-      title: '宗教信仰',
-      dataIndex: 'religion',
-      valueType: 'textarea',
-    },
-    {
-      title: '身份证',
-      dataIndex: 'idNumber',
-      valueType: 'textarea',
-    },
-    {
-      title: '专业',
-      dataIndex: 'major',
-      valueType: 'textarea',
-    },
-    {
-      title: '学制',
-      dataIndex: 'lengthOfSchooling',
-      valueType: 'textarea',
-    },
-    {
-      title: '年级',
-      dataIndex: 'grade',
-      valueType: 'textarea',
-    },
-    {
-      title: '层次',
-      dataIndex: 'level',
-      valueType: 'textarea',
-    },
-    {
-      title: '是否在校',
-      dataIndex: 'ifSchool',
-      // valueType: 'textarea',
-      valueEnum: {
-        是: {
-          text: '是',
-          status: 'Processing',
-        },
-        否: {
-          text: '否',
-          status: 'error',
-        },
-      },
-    },
-    {
-      title: '是否在籍',
+      title: '类型',
       dataIndex: 'ifAbsentee',
       // valueType: 'textarea',
       valueEnum: {
         是: {
-          text: '是',
+          text: '奖励',
           status: 'processing',
         },
         否: {
-          text: '否',
+          text: '处分',
           status: 'Error',
         },
       },
     },
-    {
-      title: '宿舍号',
-      dataIndex: 'dormitoryNumber',
-      valueType: 'textarea',
-    },
-    {
-      title: '当前班主任',
-      dataIndex: 'classTeacher',
-      valueType: 'textarea',
-    },
-    {
-      title: '籍贯',
-      dataIndex: 'native',
-      valueType: 'textarea',
-    },
 
     {
-      title: '家庭住址',
-      dataIndex: 'address',
-      valueType: 'textarea',
-    },
-
-    {
-      title: '家长姓名',
-      dataIndex: 'parentalName',
-      valueType: 'textarea',
-    },
-
-    {
-      title: '家长联系方式',
-      dataIndex: 'parentalPhone',
-      valueType: 'textarea',
-    },
-    {
-      title: '本人联系方式',
-      dataIndex: 'phone',
+      title: '原因',
+      dataIndex: 'ifAbsentee',
       valueType: 'textarea',
     },
     {
@@ -343,7 +186,7 @@ const TableList: React.FC = () => {
               onOk: async () => {
                 // await handleRemove(selectedRowsState);
                 // setSelectedRows([]);
-                await handleDeleteStudent({ id: record.id });
+                await handleRemove([record]);
                 actionRef.current?.reloadAndRest?.();
                 // deleteStudent(record.id);
               },
@@ -397,8 +240,7 @@ const TableList: React.FC = () => {
             type="primary"
             key="primary"
             onClick={() => {
-              handleExport();
-              // handleModalOpen(true);
+              handleModalOpen(true);
             }}
           >
             <ExportOutlined />
@@ -453,16 +295,11 @@ const TableList: React.FC = () => {
         </FooterToolbar>
       )}
       <ModalForm
-        title={
-          '新建学生'
-          // intl.formatMessage({
-          //   id: 'pages.searchTable.createForm.newStudent',
-          //   defaultMessage: 'New Student',
-          // })
-        }
-        // 双列
-        layout="horizontal"
-        width="1000px"
+        title={intl.formatMessage({
+          id: 'pages.searchTable.createForm.newStudent',
+          defaultMessage: 'New Student',
+        })}
+        width="400px"
         open={createModalOpen}
         onOpenChange={handleModalOpen}
         onFinish={async (value) => {
@@ -475,136 +312,6 @@ const TableList: React.FC = () => {
           }
         }}
       >
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
         <ProFormText
           rules={[
             {

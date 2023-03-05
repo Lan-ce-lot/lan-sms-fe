@@ -32,8 +32,15 @@ export default [
     path: '/student',
     name: 'student',
     // icon of antd
-    icon: 'table',
+    icon: 'TeamOutlined',
     component: './StudentTableList',
+  },
+  {
+    path: '/reward',
+    name: 'reward',
+    // icon of antd
+    icon: 'TrophyOutlined',
+    component: './RewardsAndPunishmentsTableList',
   },
   {
     path: '/admin',
