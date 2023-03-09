@@ -13,28 +13,6 @@ declare namespace API {
     pageSize?: number;
     total?: number;
   };
-  // "id": 4,
-  //   "department": "计算机科学与技术学院",
-  //   "class": "计算机科学与技术1701",
-  //   "sid": "2017010101",
-  //   "name": "张三",
-  //   "gender": "男",
-  //   "nation": "汉族",
-  //   "religious": "无",
-  //   "id_number": "123456789012345678",
-  //   "major": "计算机科学与技术",
-  //   "length_of_schooling": "4",
-  //   "grade": "2017",
-  //   "level": "本科",
-  //   "if_school": "是",
-  //   "if_absentee": "否",
-  //   "dormitory_number": "1",
-  //   "class_teacher": "李老师",
-  //   "Native": "北京",
-  //   "address": "北京市海淀区",
-  //   "parental_name": "张父",
-  //   "Parental_phone": "12345678902",
-  //   "phone": "12345678901"
   type StudentListItem = {
     // callNo?: number;
     id?: number;
@@ -60,6 +38,13 @@ declare namespace API {
     parentalPhone?: string;
     phone?: string;
   };
+  type RewardListItem = {
+    id?: number;
+    sid?: string;
+    type?: string;
+    reason?: string;
+    startTime?: string;
+  }
   type CurrentUser = {
     id?: string;
     username?: string;

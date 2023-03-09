@@ -114,7 +114,7 @@ const Welcome: React.FC = () => {
               color: token.colorTextHeading,
             }}
           >
-            欢迎使用 Ant Design Pro
+            {`欢迎使用 Lan student management system`}
           </div>
           <p
             style={{
@@ -126,7 +126,7 @@ const Welcome: React.FC = () => {
               width: '65%',
             }}
           >
-            Ant Design Pro 是一个整合了
+            Lan student management system
           </p>
           <div
             style={{
@@ -137,9 +137,9 @@ const Welcome: React.FC = () => {
           >
             <InfoCard
               index={1}
-              href=""
-              title="了解 umi"
-              desc="umi 。"
+              href="https://github.com/Lan-ce-lot"
+              title="Lan"
+              desc=""
             />
             {/*<InfoCard*/}
             {/*  index={2}*/}

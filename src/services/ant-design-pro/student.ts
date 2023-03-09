@@ -1,6 +1,7 @@
 // @ts-ignore
 /* eslint-disable */
 import { request } from '@umijs/max';
+import * as url from "url";
 
 /** 获取学生列表 GET /api/students */
 export async function student(
@@ -74,4 +75,23 @@ export async function getAllStudent(options?: { [key: string]: any }) {
     success: true,
     msg: result.msg,
   };
+}
+
+
+/**
+ * add student list POST /api/v1/student/list
+ */
+export async function addStudentList(options?: { [key: string]: any }) {
+  console.log(options)
+  return request<API.result>(
+    '/api/v1/student/list',
+    {
+      method:'POST',
+      ...(options || {}),
+    }
+  )
+  // return request<API.StudentListItem>('/api/v1/student/list', {
+  //   method: 'POST',
+  //   ...(options || {}),
+  // });
 }

@@ -1,28 +1,29 @@
 // import { addRule, removeRule, rule, updateRule } from '@/services/ant-design-pro/api';
 import {
-  addStudent,
+  addStudent, addStudentList,
   getAllStudent,
   removeStudent,
   student,
   updateStudent,
 } from '@/services/ant-design-pro/student';
-import { ExportOutlined, ImportOutlined, PlusOutlined } from '@ant-design/icons';
+import {ExportOutlined, ImportOutlined, PlusOutlined, UploadOutlined} from '@ant-design/icons';
 import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
 import {
   FooterToolbar,
   ModalForm,
   PageContainer,
-  ProDescriptions,
+  ProDescriptions, ProFormSelect,
   ProFormText,
   ProFormTextArea,
   ProTable,
 } from '@ant-design/pro-components';
 import { FormattedMessage, useIntl } from '@umijs/max';
-import { Button, Drawer, message, Modal } from 'antd';
+import {Button, Col, Drawer, message, Modal, Row, Upload, UploadProps} from 'antd';
 import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
+import * as events from "events";
 
 /**
  * @en-US Add node
@@ -74,8 +75,33 @@ const handleUpdate = async (fields: FormValueType) => {
  *
  * @param data
  */
+
 const downloadExcel = (data: any) => {
-  const worksheet = XLSX.utils.json_to_sheet(data);
+  const newData = data.map((item: any) => {
+    return {
+      "系部": item.department,
+      "班级": item.class,
+      "学号": item.sid,
+      "姓名": item.name,
+      "性别": item.gender,
+      "民族": item.nation,
+      "宗教信仰": item.religion,
+      "身份证": item.idNumber,
+      "专业": item.major,
+      "学制": item.lengthOfSchooling,
+      "年级": item.grade,
+      "层次": item.level,
+      "是否在校": item.ifSchool,
+      "是否在籍": item.ifAbsentee,
+      "宿舍号": item.dormitoryNumber,
+      "当前班主任": item.classTeacher,
+      "籍贯": item.native,
+      "家庭住址": item.address,
+      "家长姓名": item.parentalName,
+      "家长联系方式": item.parentalPhone,
+      "个人联系方式": item.phone
+    }});
+  const worksheet = XLSX.utils.json_to_sheet(newData)
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
   XLSX.writeFile(workbook, 'DataSheet.xlsx');
@@ -115,7 +141,7 @@ const handleRemove = async (selectedRows: API.StudentListItem[]) => {
   }
 };
 
-const handleDeleteStudent = async (id: number) => {
+const handleDeleteStudent = async (id: { id: number | undefined }) => {
   const hide = message.loading('正在删除');
   try {
     await removeStudent({
@@ -130,6 +156,115 @@ const handleDeleteStudent = async (id: number) => {
     return false;
   }
 };
+
+const nameMap:Map<string, string> = new Map([
+  // ""
+  ["id", "id"],
+  [  "department", "系部"],
+  [  "class", "班级"],
+  [  "sid", "学号"],
+  [  "name", "姓名"],
+  [  "gender", "性别"],
+  [  "nation", "民族"],
+  [  "religion", "宗教信仰"],
+  [  "idNumber", "身份证"],
+  [  "major", "专业"],
+  [  "lengthOfSchooling", "学制"],
+  [  "grade", "年级"],
+  [  "level", "层次"],
+  [  "ifSchool", "是否在校"],
+  [  "ifAbsentee", "是否在籍"],
+  [  "dormitoryNumber", "宿舍号"],
+  [  "classTeacher", "当前班主任"],
+  [  "native", "籍贯"],
+  [  "address", "家庭住址"],
+  [  "parentalName", "家长姓名"],
+  [  "parentalPhone", "家长联系方式"],
+  [  "phone", "本人联系方式"]
+]);
+
+// reverse  nameMap type map
+const reverseNameMap:Map<string, string> = new Map([
+  ["id", "id"],
+[  "系部", "department"],
+[  "班级", "class"],
+[  "学号", "sid"],
+[  "姓名", "name"],
+[  "性别", "gender"],
+[  "民族", "nation"],
+[  "宗教信仰", "religion"],
+[  "身份证", "idNumber"],
+[  "专业", "major"],
+[  "学制", "lengthOfSchooling"],
+[  "年级", "grade"],
+[  "层次", "level"],
+[  "是否在校", "ifSchool"],
+[  "是否在籍", "ifAbsentee"],
+[  "宿舍号", "dormitoryNumber"],
+[  "当前班主任", "classTeacher"],
+[  "籍贯", "native"],
+[  "家庭住址", "address"],
+[  "家长姓名", "parentalName"],
+[  "家长联系方式", "parentalPhone"],
+[  "本人联系方式", "phone"]
+  ]
+)
+
+
+const props: UploadProps = {
+  showUploadList: false,
+
+  name: 'file',
+  headers: {
+    authorization: 'authorization-text',
+  },
+  beforeUpload(file) {
+    console.log(file);
+    const isXLSX = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (!isXLSX) {
+      message.error(`${file.name} is not a XLSX file`);
+      return false;
+    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = e.target?.result;
+      const workbook = XLSX.read(data, {type: "array"});
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonList:any[] = XLSX.utils.sheet_to_json(worksheet);
+      console.log(jsonList);
+      try {
+        for (let json of jsonList) {
+          for (let i in reverseNameMap) {
+            if (reverseNameMap.has(i)) {
+              json[reverseNameMap.get(i)!] = json[i]
+              delete json[i]
+            }
+          }
+        }
+        await addStudentList({data: jsonList})
+
+        message.success(`${file.name} file uploaded successfully`);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    return false;
+  },
+  onChange(info) {
+    if (info.file.status !== 'uploading') {
+      console.log(info.file, info.fileList);
+    }
+    if (info.file.status === 'done') {
+      message.success(`${info.file.name} file uploaded successfully`);
+      const reader = new FileReader();
+    } else if (info.file.status === 'error') {
+      message.error(`${info.file.name} file upload failed.`);
+    }
+  },
+};
+
 
 const TableList: React.FC = () => {
   /**
@@ -384,15 +519,18 @@ const TableList: React.FC = () => {
           >
             <PlusOutlined /> <FormattedMessage id="pages.searchTable.new" defaultMessage="New" />
           </Button>,
-          <Button
-            type="primary"
-            key="primary"
-            onClick={() => {
-              handleModalOpen(true);
-            }}
+          <Upload
+            {...props}
+          // onChange={readUploadFile}
           >
-            <ImportOutlined /> {'导入'}
-          </Button>,
+            <Button
+              type="primary"
+              key="primary"
+              icon={<UploadOutlined />}
+            >{'导入'}
+            </Button>
+          </Upload>
+          ,
           <Button
             type="primary"
             key="primary"
@@ -461,8 +599,7 @@ const TableList: React.FC = () => {
           // })
         }
         // 双列
-        layout="horizontal"
-        width="1000px"
+        // width="1000px"
         open={createModalOpen}
         onOpenChange={handleModalOpen}
         onFinish={async (value) => {
@@ -475,147 +612,350 @@ const TableList: React.FC = () => {
           }
         }}
       >
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormText
-          rules={[
-            {
-              required: true,
-              message: 'Student name is required',
-            },
-          ]}
-          width="md"
-          name="name"
-        />
-        <ProFormTextArea width="md" name="desc" />
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'department is required',
+                },
+              ]}
+              width="md"
+              name="department"
+              placeholder={"系部"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="class"
+              placeholder={"班级"}
+            />
+          </Col>
+        </Row>
+
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="sid"
+              placeholder={"学号"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="name"
+              placeholder={"姓名"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormSelect
+              rules={[
+                {
+                  required: true,
+                  message: 'required',
+                },
+              ]}
+              width="md"
+              name="gender"
+              placeholder={"性别"}
+              options={[
+                {
+                  value:"男",
+                  label: "男"
+                },
+                {
+                  value:"女",
+                  label: "女"
+                },
+              ]
+              }
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="notion"
+              placeholder={"民族"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="religion"
+              placeholder={"宗教信仰"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              // IDnumber
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+                // {
+                //   // pattern for IdNumber
+                //   pattern: /^\\d{6}(18|19|20)?\\d{2}(0[1-9]|1[012])(0[1-9]|[12]\\d|3[01])\\d{3}(\\d|[xX])$/,
+                //   message: '身份证号格式不正确'
+                // }
+              ]}
+              width="md"
+              name="idNumber"
+              placeholder={"身份证"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="major"
+              placeholder={"专业"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="lengthOfSchooling"
+              placeholder={"学制"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="grade"
+              placeholder={"年级"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="level"
+              placeholder={"层次"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormSelect
+              rules={[
+                {
+                  required: true,
+                  message: 'required',
+                },
+              ]}
+              width="md"
+              name="ifSchool"
+              placeholder={"是否在校"}
+              options={[
+                {
+                  value:"是",
+                  label:"是"
+                },
+                {
+                  value:"否",
+                  label:"否"
+                },
+                ]}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormSelect
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="ifAbsentee"
+              placeholder={"是否在籍"}
+              options={[
+                {
+                  value:"是",
+                  label:"是"
+                },
+                {
+                  value:"否",
+                  label:"否"
+                },
+              ]}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="dormitoryNumber"
+              placeholder={"宿舍号"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="classTeacher"
+              placeholder={"当前班主任"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="native"
+              placeholder={"籍贯"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="address"
+              placeholder={"家庭住址"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="parentalName"
+              placeholder={"家长姓名"}
+            />
+
+          </Col>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="parentalPhone"
+              placeholder={"家长联系方式"}
+            />
+          </Col>
+        </Row>
+        <Row gutter={24}>
+          <Col span={12}>
+            <ProFormText
+              rules={[
+                {
+                  required: true,
+                  message: 'Student name is required',
+                },
+              ]}
+              width="md"
+              name="phone"
+              placeholder={"个人联系方式"}
+            />
+
+          </Col>
+        </Row>
       </ModalForm>
       <UpdateForm
         onSubmit={async (value) => {

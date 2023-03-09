@@ -1,18 +1,17 @@
 // import { addRule, removeRule, rule, updateRule } from '@/services/ant-design-pro/api';
 import {
-  addStudent,
-  removeStudent,
-  student,
-  updateStudent,
-} from '@/services/ant-design-pro/student';
-import { ExportOutlined, ImportOutlined, PlusOutlined } from '@ant-design/icons';
+  addReward,
+  removeReward,
+  reward,
+  updateReward,
+} from '@/services/ant-design-pro/reward';
+import { ExportOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
 import {
   FooterToolbar,
   ModalForm,
   PageContainer,
-  ProDescriptions,
-  ProFormText,
+  ProDescriptions, ProFormDateTimePicker, ProFormSelect,
   ProFormTextArea,
   ProTable,
 } from '@ant-design/pro-components';
@@ -21,6 +20,7 @@ import { Button, Drawer, message, Modal } from 'antd';
 import React, { useRef, useState } from 'react';
 import type { FormValueType } from './components/UpdateForm';
 import UpdateForm from './components/UpdateForm';
+import {getAllStudent} from "@/services/ant-design-pro/student";
 
 /**
  * @en-US Add node
@@ -30,7 +30,7 @@ import UpdateForm from './components/UpdateForm';
 const handleAdd = async (fields: API.StudentListItem) => {
   const hide = message.loading('正在添加');
   try {
-    await addStudent({ ...fields });
+    await addReward({data:fields});
     hide();
     message.success('Added successfully');
     return true;
@@ -50,7 +50,7 @@ const handleAdd = async (fields: API.StudentListItem) => {
 const handleUpdate = async (fields: FormValueType) => {
   const hide = message.loading('Configuring');
   try {
-    await updateStudent({
+    await updateReward({
       name: fields.name,
       desc: fields.desc,
       key: fields.key,
@@ -76,7 +76,7 @@ const handleRemove = async (selectedRows: API.StudentListItem[]) => {
   const hide = message.loading('正在删除');
   if (!selectedRows) return true;
   try {
-    await removeStudent({
+    await removeReward({
       key: selectedRows.map((row) => row.id),
     });
     hide();
@@ -115,8 +115,7 @@ const TableList: React.FC = () => {
 
   const columns: ProColumns<API.StudentListItem>[] = [
     {
-      title:
-        '学号',
+      title: '学号',
         // <FormattedMessage
         //   id="pages.searchTable.titleCallNo"
         //   defaultMessage="Number of service calls"
@@ -124,11 +123,6 @@ const TableList: React.FC = () => {
       dataIndex: 'sid',
       sorter: true,
       hideInForm: true,
-      // renderText: (val: string) =>
-      //   `${val}${intl.formatMessage({
-      //     id: 'pages.searchTable.tenThousand',
-      //     defaultMessage: ' 万 ',
-      //   })}`,
     },
     {
       title: '姓名',
@@ -138,7 +132,7 @@ const TableList: React.FC = () => {
     },
     {
       title: '类型',
-      dataIndex: 'ifAbsentee',
+      dataIndex: 'type',
       // valueType: 'textarea',
       valueEnum: {
         是: {
@@ -151,11 +145,15 @@ const TableList: React.FC = () => {
         },
       },
     },
-
     {
       title: '原因',
-      dataIndex: 'ifAbsentee',
+      dataIndex: 'reason',
       valueType: 'textarea',
+    },
+    {
+      title: '时间',
+      dataIndex: 'startTime',
+      valueType: 'date',
     },
     {
       title: <FormattedMessage id="pages.searchTable.titleOption" defaultMessage="Operating" />,
@@ -165,8 +163,9 @@ const TableList: React.FC = () => {
         <a
           key="config"
           onClick={() => {
-            handleUpdateModalOpen(true);
             setCurrentRow(record);
+            handleUpdateModalOpen(true);
+
           }}
         >
           {'修改'}
@@ -186,7 +185,8 @@ const TableList: React.FC = () => {
               onOk: async () => {
                 // await handleRemove(selectedRowsState);
                 // setSelectedRows([]);
-                await handleRemove([record]);
+                // await handleRemove([record]);
+                await removeReward({ id: record.id });
                 actionRef.current?.reloadAndRest?.();
                 // deleteStudent(record.id);
               },
@@ -195,10 +195,6 @@ const TableList: React.FC = () => {
           // href="https://procomponents.ant.design/"
         >
           {'删除'}
-          {/*<FormattedMessage*/}
-          {/*  id="pages.searchTable.subscribeAlert"*/}
-          {/*  defaultMessage="删除"*/}
-          {/*/>*/}
         </Button>,
       ],
     },
@@ -234,20 +230,11 @@ const TableList: React.FC = () => {
               handleModalOpen(true);
             }}
           >
-            <ImportOutlined /> {'导入'}
-          </Button>,
-          <Button
-            type="primary"
-            key="primary"
-            onClick={() => {
-              handleModalOpen(true);
-            }}
-          >
             <ExportOutlined />
             {'导出'}
           </Button>,
         ]}
-        request={student}
+        request={reward}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {
@@ -297,7 +284,7 @@ const TableList: React.FC = () => {
       <ModalForm
         title={intl.formatMessage({
           id: 'pages.searchTable.createForm.newStudent',
-          defaultMessage: 'New Student',
+          defaultMessage: '新建奖惩',
         })}
         width="400px"
         open={createModalOpen}
@@ -312,38 +299,116 @@ const TableList: React.FC = () => {
           }
         }}
       >
-        <ProFormText
+        <ProFormSelect
+          showSearch
           rules={[
             {
               required: true,
-              message: 'Student name is required',
+              message: 'required',
             },
           ]}
           width="md"
-          name="name"
+          placeholder={'学号'}
+          name="sid"
+          request={async () => {
+            const res = await getAllStudent();
+            return res.data.map((item: any) => {
+              return {
+                label: item.sid,
+                value: item.sid,
+              };
+            })
+          }
+          }
         />
-        <ProFormTextArea width="md" name="desc" />
+        <ProFormSelect showSearch width="md" placeholder={'类型'}  name="type"
+        options={[
+          {
+            value: "奖励",
+            label: "奖励"
+          },
+          {
+            value: "处分",
+            label: "处分"
+          }
+        ]}
+        />
+        <ProFormTextArea width="md" placeholder={'原因'}  name="reason" />
+        <ProFormDateTimePicker width="md"  name="startTime" />
       </ModalForm>
-      <UpdateForm
-        onSubmit={async (value) => {
-          const success = await handleUpdate(value);
+      <ModalForm
+        // set value when open
+        initialValues={currentRow}
+        open={updateModalOpen}
+        title={intl.formatMessage({
+          id: 'pages.searchTable.createForm.newStudent',
+          defaultMessage: '修改奖惩',
+        })}
+        width="400px"
+        onOpenChange={handleUpdateModalOpen}
+        onFinish={async (value) => {
+          const success = await handleAdd(value as API.StudentListItem);
           if (success) {
-            handleUpdateModalOpen(false);
-            setCurrentRow(undefined);
+            handleModalOpen(false);
             if (actionRef.current) {
               actionRef.current.reload();
             }
           }
         }}
-        onCancel={() => {
-          handleUpdateModalOpen(false);
-          if (!showDetail) {
-            setCurrentRow(undefined);
+        // onSubmit={async (value) => {
+        //   const success = await handleUpdate(value);
+        //   if (success) {
+        //     handleUpdateModalOpen(false);
+        //     setCurrentRow(undefined);
+        //     if (actionRef.current) {
+        //       actionRef.current.reload();
+        //     }
+        //   }
+        // }}
+        // onCancel={() => {
+        //   handleUpdateModalOpen(false);
+        //   if (!showDetail) {
+        //     setCurrentRow(undefined);
+        //   }
+        // }}
+      >
+        <ProFormSelect
+          showSearch
+          rules={[
+            {
+              required: true,
+              message: 'required',
+            },
+          ]}
+          width="md"
+          placeholder={'学号'}
+          name="sid"
+          request={async () => {
+            const res = await getAllStudent();
+            return res.data.map((item: any) => {
+              return {
+                label: item.sid,
+                value: item.sid,
+              };
+            })
           }
-        }}
-        updateModalOpen={updateModalOpen}
-        values={currentRow || {}}
-      />
+          }
+        />
+        <ProFormSelect showSearch width="md" placeholder={'类型'}  name="type"
+                       options={[
+                         {
+                           value: "奖励",
+                           label: "奖励"
+                         },
+                         {
+                           value: "处分",
+                           label: "处分"
+                         }
+                       ]}
+        />
+        <ProFormTextArea width="md" placeholder={'原因'}  name="reason" />
+        <ProFormDateTimePicker width="md"  name="startTime" />
+      </ModalForm>
 
       <Drawer
         width={600}
